@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowUpRight, CheckCircle2, ChevronRight, CircleDot, Clock3, Code2, GitPullRequest, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, CheckCircle2, ChevronRight, CircleDot, Clock3, Code2, GitPullRequest, Moon, ShieldCheck, Sparkles, Sun } from "lucide-react";
 
 type Severity = "critical" | "high" | "medium" | "low";
 type Finding = { id: string; severity: Severity; category: string; title: string; explanation: string; suggestion: string };
@@ -25,6 +25,7 @@ export default function Home() {
   const [liveMode, setLiveMode] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSynced, setLastSynced] = useState("just now");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   const findings = useMemo(() => activeFilter === "all" ? reviewFindings : reviewFindings.filter((finding) => finding.severity === activeFilter), [activeFilter, reviewFindings]);
 
@@ -45,6 +46,15 @@ export default function Home() {
   useEffect(() => {
     refreshHistory();
   }, []);
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem("reviewpilot-theme");
+    if (savedTheme === "dark" || savedTheme === "light") setTheme(savedTheme);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("reviewpilot-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!liveMode) return;
@@ -82,7 +92,7 @@ export default function Home() {
   }
 
   return (
-    <main className="shell">
+    <main className={theme === "dark" ? "shell dark-mode" : "shell"}>
       <aside className="sidebar">
         <div className="brand"><div className="brand-mark"><Sparkles size={17} /></div><span>reviewpilot</span></div>
         <div className="workspace-switcher"><div className="avatar purple">R</div><div><strong>Ram&apos;s workspace</strong><span>Personal team</span></div><ChevronRight size={15} /></div>
@@ -90,7 +100,7 @@ export default function Home() {
         <div className="sidebar-bottom"><div className="plan-card"><div className="plan-top"><span>Free plan</span><span>62%</span></div><div className="progress"><span /></div><p>62 of 100 reviews used</p><button>Upgrade workspace <ArrowUpRight size={13} /></button></div><div className="user-row"><div className="avatar orange">RS</div><div><strong>Ram Singh</strong><span>ram@example.com</span></div><span className="online-dot" /></div></div>
       </aside>
       <section className="content">
-        <header className="topbar"><div><span className="breadcrumb"><i className="live-dot" />Workspace / Overview</span><h1>Good morning, Ram <span>✦</span></h1><p>Here&apos;s what your codebase needs attention on today.</p></div><div className="top-actions"><button className={liveMode ? "live-toggle active" : "live-toggle"} onClick={() => setLiveMode((value) => !value)}><span className="sync-dot" />Live {liveMode ? "on" : "off"}</button><span className="sync-label"><span className="sync-dot" />{isRefreshing ? "Syncing…" : `Synced ${lastSynced}`}</span><button className="icon-button" onClick={refreshHistory} aria-label="Refresh activity"><Clock3 size={17} /></button><button className="primary-button" onClick={runReview}>{isRunning ? "Analyzing…" : "Run a review"}<ArrowUpRight size={15} /></button></div></header>
+        <header className="topbar"><div><span className="breadcrumb"><i className="live-dot" />Workspace / Overview</span><h1>Good morning, Ram <span>✦</span></h1><p>Here&apos;s what your codebase needs attention on today.</p></div><div className="top-actions"><button className="theme-toggle" onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")} aria-label="Toggle dark mode">{theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}<span>{theme === "dark" ? "Light" : "Dark"}</span></button><button className={liveMode ? "live-toggle active" : "live-toggle"} onClick={() => setLiveMode((value) => !value)}><span className="sync-dot" />Live {liveMode ? "on" : "off"}</button><span className="sync-label"><span className="sync-dot" />{isRefreshing ? "Syncing…" : `Synced ${lastSynced}`}</span><button className="icon-button" onClick={refreshHistory} aria-label="Refresh activity"><Clock3 size={17} /></button><button className="primary-button" onClick={runReview}>{isRunning ? "Analyzing…" : "Run a review"}<ArrowUpRight size={15} /></button></div></header>
         {notice && <div className="notice"><CheckCircle2 size={16} />{notice}</div>}
         <section className="import-card"><div className="import-copy"><div className="import-icon"><GitPullRequest size={17} /></div><div><div className="import-title"><strong>Review a real GitHub pull request</strong><span className="new-badge">LIVE</span></div><p>Paste a public PR URL and let ReviewPilot surface what matters before merge.</p></div></div><form className="import-form" onSubmit={reviewGithubPr}><input aria-label="GitHub pull request URL" value={prUrl} onChange={(event) => setPrUrl(event.target.value)} placeholder="https://github.com/owner/repo/pull/123" required /><button className="primary-button" type="submit" disabled={isRunning}>{isRunning ? "Analyzing…" : "Analyze PR"}<ArrowUpRight size={15} /></button></form></section>
         <section className="automation-strip"><div className="automation-icon"><Sparkles size={16} /></div><div className="automation-copy"><strong>Automation layer is ready</strong><span>GitHub webhooks can trigger reviews when a PR opens or changes.</span></div><span className="automation-status"><i />Webhook ready</span><button className="ghost-button">Setup guide <ArrowUpRight size={14} /></button></section>
