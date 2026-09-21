@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .database import Base, engine
-from .routers import health, reviews
+from .routers import health, reviews, webhooks
 
 settings = get_settings()
 Base.metadata.create_all(bind=engine)
@@ -22,3 +22,4 @@ app.add_middleware(
 )
 app.include_router(health.router)
 app.include_router(reviews.router)
+app.include_router(webhooks.router)

@@ -23,6 +23,23 @@ class GithubPRRequest(BaseModel):
     pr_url: str = Field(min_length=1, max_length=500)
 
 
+class ReviewHistoryItem(BaseModel):
+    id: int
+    repository: str
+    pull_request_number: int
+    title: str
+    status: str
+    summary: str
+    created_at: datetime
+
+
+class WebhookResponse(BaseModel):
+    accepted: bool
+    action: str
+    review_id: str | None = None
+    message: str
+
+
 class Finding(BaseModel):
     id: str
     severity: Severity

@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     ai_model: str = "gpt-4.1-mini"
     ai_provider: str = "mock"
     web_origin: str = "http://localhost:3000"
+    github_webhook_secret: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

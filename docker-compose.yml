@@ -29,6 +29,7 @@ services:
       AI_PROVIDER: ${AI_PROVIDER:-mock}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-gpt-4.1-mini}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-change-me-in-production}
     ports:
       - "8000:8000"
     depends_on:
