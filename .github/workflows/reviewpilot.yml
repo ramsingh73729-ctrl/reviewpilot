@@ -1,0 +1,43 @@
+name: ReviewPilot PR analysis
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Analyze pull request
+        env:
+          REVIEWPILOT_API_URL: ${{ secrets.REVIEWPILOT_API_URL }}
+          PR_DIFF_URL: ${{ github.event.pull_request.diff_url }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [ -z "$REVIEWPILOT_API_URL" ]; then
+            echo "REVIEWPILOT_API_URL is not configured; skipping ReviewPilot analysis."
+            exit 0
+          fi
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          diff = urllib.request.urlopen(os.environ["PR_DIFF_URL"]).read().decode("utf-8", errors="replace")
+          payload = json.dumps({
+              "repository": os.environ["REPOSITORY"],
+              "pull_request_number": int(os.environ["PR_NUMBER"]),
+              "title": os.environ["PR_TITLE"],
+              "diff": diff,
+          }).encode()
+          request = urllib.request.Request(
+              os.environ["REVIEWPILOT_API_URL"].rstrip("/") + "/api/v1/reviews/preview",
+              data=payload,
+              headers={"content-type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(request) as response:
+              print(response.read().decode())
+          PY

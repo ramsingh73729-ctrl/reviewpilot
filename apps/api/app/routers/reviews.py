@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from ..ai_provider import analyze_review
 from ..database import get_db
 from ..models import Review
 from ..review_engine import review_diff
@@ -58,8 +59,8 @@ def persist_review(db: Session, result: ReviewResponse) -> None:
 
 
 @router.post("/preview", response_model=ReviewResponse)
-def preview_review(payload: ReviewRequest, db: Session = Depends(get_db)) -> ReviewResponse:
-    result = review_diff(payload)
+async def preview_review(payload: ReviewRequest, db: Session = Depends(get_db)) -> ReviewResponse:
+    result = await analyze_review(payload)
     persist_review(db, result)
     return result
 
@@ -68,7 +69,7 @@ def preview_review(payload: ReviewRequest, db: Session = Depends(get_db)) -> Rev
 async def review_github_pr(payload: GithubPRRequest, db: Session = Depends(get_db)) -> ReviewResponse:
     owner, repository, number = parse_github_pr_url(payload.pr_url)
     diff = await fetch_github_diff(owner, repository, number)
-    result = review_diff(ReviewRequest(
+    result = await analyze_review(ReviewRequest(
         repository=f"{owner}/{repository}",
         pull_request_number=number,
         title=f"Pull request #{number}",

@@ -3,10 +3,10 @@ import hmac
 
 from fastapi import APIRouter, Header, HTTPException, Request, status
 
+from ..ai_provider import analyze_review
 from ..config import get_settings
 from ..database import SessionLocal
 from ..routers.reviews import fetch_github_diff, parse_github_pr_url, persist_review
-from ..review_engine import review_diff
 from ..schemas import ReviewRequest, WebhookResponse
 
 router = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks"])
@@ -42,7 +42,7 @@ async def github_webhook(
         raise HTTPException(status_code=422, detail="Webhook payload is missing pull_request.html_url.")
     owner, repository, number = parse_github_pr_url(pr_url)
     diff = await fetch_github_diff(owner, repository, number)
-    result = review_diff(ReviewRequest(
+    result = await analyze_review(ReviewRequest(
         repository=f"{owner}/{repository}",
         pull_request_number=number,
         title=pr.get("title", f"Pull request #{number}"),

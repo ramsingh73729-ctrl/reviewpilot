@@ -11,6 +11,7 @@ ReviewPilot turns a diff into prioritized findings, explains why each finding ma
 - Public GitHub PR import endpoint that fetches a diff and runs the review engine
 - HMAC-verified GitHub webhook endpoint for automatic reviews on PR events
 - Review history persistence and a recent-review API
+- Optional GitHub Actions workflow for every opened, reopened, or updated PR
 - Deterministic review engine that works without an API key
 - Optional OpenAI-compatible provider behind a small service boundary
 - SQLAlchemy persistence model ready for PostgreSQL
@@ -79,6 +80,8 @@ Open the dashboard and paste a URL such as `https://github.com/owner/repository/
 ## Automatic GitHub reviews
 
 Set `GITHUB_WEBHOOK_SECRET` in `.env`, expose the API publicly, and configure a GitHub repository webhook for `POST /api/v1/webhooks/github`. Send the `pull_request` event with the `opened`, `reopened`, and `synchronize` actions. ReviewPilot verifies GitHub's `X-Hub-Signature-256` header before fetching the diff and storing the review summary.
+
+For CI-based reviews, add a GitHub Actions secret named `REVIEWPILOT_API_URL` containing the public API origin. The included workflow then calls `/api/v1/reviews/preview` for each pull request event.
 
 ## Project layout
 
