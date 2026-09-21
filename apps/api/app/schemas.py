@@ -19,6 +19,10 @@ class ReviewRequest(BaseModel):
     diff: str = Field(min_length=1, max_length=200_000)
 
 
+class GithubPRRequest(BaseModel):
+    pr_url: str = Field(min_length=1, max_length=500)
+
+
 class Finding(BaseModel):
     id: str
     severity: Severity

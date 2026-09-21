@@ -18,13 +18,37 @@ export default function Home() {
   const [activeFilter, setActiveFilter] = useState<"all" | Severity>("all");
   const [isRunning, setIsRunning] = useState(false);
   const [notice, setNotice] = useState("");
+  const [prUrl, setPrUrl] = useState("");
+  const [reviewFindings, setReviewFindings] = useState(demoFindings);
 
-  const findings = useMemo(() => activeFilter === "all" ? demoFindings : demoFindings.filter((finding) => finding.severity === activeFilter), [activeFilter]);
+  const findings = useMemo(() => activeFilter === "all" ? reviewFindings : reviewFindings.filter((finding) => finding.severity === activeFilter), [activeFilter, reviewFindings]);
 
   function runReview() {
     setIsRunning(true);
     setNotice("");
-    window.setTimeout(() => { setIsRunning(false); setNotice("Review complete — 3 actionable findings refreshed."); }, 900);
+    window.setTimeout(() => { setIsRunning(false); setNotice(`Review complete — ${reviewFindings.length} actionable findings refreshed.`); }, 900);
+  }
+
+  async function reviewGithubPr(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsRunning(true);
+    setNotice("");
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/reviews/from-github`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ pr_url: prUrl }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.detail ?? "GitHub review failed.");
+      setReviewFindings(payload.findings ?? []);
+      setActiveFilter("all");
+      setNotice(`GitHub PR #${payload.pull_request_number} reviewed — ${payload.findings.length} findings detected.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "GitHub review failed.");
+    } finally {
+      setIsRunning(false);
+    }
   }
 
   return (
@@ -38,6 +62,7 @@ export default function Home() {
       <section className="content">
         <header className="topbar"><div><span className="breadcrumb">Workspace / Overview</span><h1>Good morning, Ram <span>✦</span></h1><p>Here&apos;s what your codebase needs attention on today.</p></div><div className="top-actions"><button className="icon-button"><Clock3 size={17} /></button><button className="primary-button" onClick={runReview}>{isRunning ? "Analyzing…" : "Run a review"}<ArrowUpRight size={15} /></button></div></header>
         {notice && <div className="notice"><CheckCircle2 size={16} />{notice}</div>}
+        <section className="import-card"><div className="import-copy"><div className="import-icon"><GitPullRequest size={17} /></div><div><strong>Review a real GitHub pull request</strong><p>Paste a public PR URL and ReviewPilot will fetch its diff and scan it.</p></div></div><form className="import-form" onSubmit={reviewGithubPr}><input aria-label="GitHub pull request URL" value={prUrl} onChange={(event) => setPrUrl(event.target.value)} placeholder="https://github.com/owner/repo/pull/123" required /><button className="primary-button" type="submit" disabled={isRunning}>{isRunning ? "Analyzing…" : "Analyze PR"}<ArrowUpRight size={15} /></button></form></section>
         <div className="stats-grid"><Stat icon={<GitPullRequest size={18} />} label="Reviews this month" value="62" delta="+18.4%" positive /><Stat icon={<AlertTriangle size={18} />} label="Actionable findings" value="14" delta="-8.2%" positive /><Stat icon={<ShieldCheck size={18} />} label="Avg. health score" value="86" suffix="/100" delta="+4.6%" positive /><Stat icon={<Clock3 size={18} />} label="Avg. review time" value="2m 14s" delta="-31 sec" positive /></div>
         <div className="main-grid"><section className="panel review-panel"><div className="panel-heading"><div><div className="heading-line"><h2>Latest review</h2><span className="status-pill"><span className="status-dot" /> Completed</span></div><p>PR #184 · Harden checkout validation</p></div><button className="ghost-button">View full review <ArrowUpRight size={14} /></button></div><div className="repo-line"><div className="repo-icon"><Code2 size={18} /></div><div><strong>acme / checkout</strong><span>opened by maya-chen · 18 minutes ago</span></div><div className="score"><span>Health score</span><strong>82 <small>/ 100</small></strong></div></div><div className="review-summary"><div className="summary-icon"><Sparkles size={17} /></div><div><strong>Review summary</strong><p>Solid validation improvements with a few reliability and performance concerns worth addressing before merge.</p></div></div><div className="findings-toolbar"><div><strong>Findings</strong><span className="finding-count">3</span></div><div className="filters">{(["all", "high", "medium", "low"] as const).map((filter) => <button key={filter} className={activeFilter === filter ? "filter active" : "filter"} onClick={() => setActiveFilter(filter)}>{filter === "all" ? "All findings" : filter[0].toUpperCase() + filter.slice(1)}</button>)}</div></div><div className="findings-list">{findings.map((finding) => <FindingCard key={finding.id} finding={finding} />)}</div></section><aside className="right-column"><section className="panel"><div className="panel-heading compact"><h2>Review activity</h2><button className="more">•••</button></div><div className="activity-chart"><div className="chart-labels"><span>12</span><span>8</span><span>4</span><span>0</span></div><div className="chart-area"><div className="grid-lines"><i /><i /><i /><i /></div><svg viewBox="0 0 420 160" preserveAspectRatio="none"><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#8671ff" stopOpacity=".3" /><stop offset="100%" stopColor="#8671ff" stopOpacity="0" /></linearGradient></defs><path d="M0 130 C28 119 40 111 63 118 S93 80 118 96 S154 50 182 76 S209 88 236 58 S269 82 294 48 S330 44 350 55 S390 22 420 34 L420 160 L0 160 Z" fill="url(#fill)" /><path d="M0 130 C28 119 40 111 63 118 S93 80 118 96 S154 50 182 76 S209 88 236 58 S269 82 294 48 S330 44 350 55 S390 22 420 34" fill="none" stroke="#8b7cff" strokeWidth="3" /></svg></div></div><div className="chart-x"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div><div className="chart-legend"><span><i className="legend-dot purple-dot" />Reviews</span><span><i className="legend-dot amber-dot" />Findings</span></div></section><section className="panel quick-panel"><div className="panel-heading compact"><h2>Quick start</h2><span className="muted">2 of 4 complete</span></div><div className="setup-progress"><span /></div><SetupItem done title="Connect GitHub" /><SetupItem done title="Review your first PR" /><SetupItem title="Create a rule pack" /><SetupItem title="Invite a teammate" /></section></aside></div>
       </section>

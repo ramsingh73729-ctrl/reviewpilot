@@ -8,6 +8,7 @@ ReviewPilot turns a diff into prioritized findings, explains why each finding ma
 
 - Next.js dashboard with review metrics, severity filters, and a review detail view
 - FastAPI API with typed request/response contracts
+- Public GitHub PR import endpoint that fetches a diff and runs the review engine
 - Deterministic review engine that works without an API key
 - Optional OpenAI-compatible provider behind a small service boundary
 - SQLAlchemy persistence model ready for PostgreSQL
@@ -68,6 +69,10 @@ curl -X POST http://localhost:8000/api/v1/reviews/preview \
 3. Repository-specific rule packs and baselines
 4. Inline GitHub review comments and issue auto-labeling
 5. Team analytics, billing, and audit exports
+
+## Review a public GitHub PR
+
+Open the dashboard and paste a URL such as `https://github.com/owner/repository/pull/123` into the GitHub review box. The API validates that the URL is a GitHub pull request, fetches the public `.diff`, and returns normalized findings. Private repositories and authenticated GitHub App workflows are part of the next integration phase.
 
 ## Project layout
 

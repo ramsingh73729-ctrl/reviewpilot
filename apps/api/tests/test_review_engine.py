@@ -1,4 +1,5 @@
 from app.review_engine import review_diff
+from app.routers.reviews import parse_github_pr_url
 from app.schemas import ReviewRequest, Severity
 
 
@@ -22,3 +23,7 @@ def test_clean_diff_is_ready() -> None:
     ))
     assert result.findings == []
     assert result.score == 100
+
+
+def test_parses_github_pull_request_url() -> None:
+    assert parse_github_pr_url("https://github.com/acme/checkout/pull/42") == ("acme", "checkout", 42)
